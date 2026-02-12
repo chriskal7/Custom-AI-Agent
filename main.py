@@ -47,42 +47,47 @@ prompt = ChatPromptTemplate.from_messages([
     ("user", "{input}")]
 )
 
-chain = prompt | llm | StrOutputParser()
 
-print("Hi, I am Alfred, how may I help you today?")
+chain = prompt | llm | StrOutputParser()
 
 
 def chat(user_in, hist):
-
     langchain_history = []
+
     for item in hist:
         if item["role"] == "user":
             langchain_history.append(HumanMessage(content=item["content"]))
         elif item["role"] == "assistant":
             langchain_history.append(AIMessage(content=item["content"]))
+
     response = chain.invoke({"input": user_in, "history": langchain_history})
 
     return "", hist + [{"role": "user", "content": user_in},
                        {"role": "assistant", "content": response}]
 
+def clear_chat():
+    return "", []
+
 page = gr.Blocks(
-        title="Chat with Alfred"
+        title="Chat with Alfred",
+        fill_height=True
 )
 
 with page:
     gr.Markdown(
         """
-        #Chat with Alfred
+        Chat with Alfred\n
         Welcome to your personal conversation with Alfred.
         """
     )
 
-    chatbot = gr.Chatbot()
+    chatbot = gr.Chatbot(height=600)
 
-    msg = gr.Textbox()
+    msg = gr.Textbox(placeholder="Ask Alfred anything...")
 
     msg.submit(chat, [msg, chatbot], [msg, chatbot])
 
     clear = gr.Button("Clear Chat")
+    clear.click(clear_chat, outputs=[msg, chatbot])
 
 page.launch(theme=gr.themes.Soft(), share=True)
